@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Base Script</title>
+    <style>
+      body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background-color: #f5f5f5;
+      }
+      #content {
+          width: 210mm;
+          max-width: 100%;
+          background-color: white;
+          padding: 5mm 15mm; 
+          margin-bottom: 15px;
+          box-sizing: border-box;
+      }
+      table {
+          border-collapse: collapse;
+          width: 100%;
+          border: 1px solid #333;
+          margin-bottom: -1px;
+      }
+
+      th, td {
+          border: 1px solid #333;
+          text-align: left;
+          vertical-align: middle;
+          font-size: 12px;
+          color: #000;
+          padding: 5px;
+          word-wrap: break-word;
+      }
+
+      th {
+          font-weight: bold;
+      }
+
+      .title-h1 {
+          text-align: center;
+          font-size: 18px;
+          margin: 20px 0;
+          border: none;
+      }
+
+      .subtitle {
+          text-align: center;
+          font-size: 12px;
+          color: #666;
+          margin: 10px 0;
+          border: none;
+      }
+
+      .table-type-1 td:nth-child(1) {
+          font-weight: bold;
+          width: 20%;
+      }
+      .table-type-1 td:nth-child(3) {
+          font-weight: bold;
+          width: 20%;
+      }
+      .table-type-1 td:nth-child(2) {
+          width: 30%;
+      }
+      .table-type-1 td:nth-child(4) {
+          width: 30%;
+      }
+
+      .table-type-2 td:first-child {
+          width: 20%;
+          font-weight: bold;
+      }
+
+      .table-type-2 td:last-child {
+          width: 80%;
+      }
+
+      .table-type-3 td {
+          width: auto;
+          min-width: 10%;
+      }
+      .table-type-3 td:first-child {
+          max-width: 20%;
+      }
+      .table-type-3 tr:first-child td {
+          font-weight: bold;
+      }
+
+      /* PDF导出专用样式 */
+      @media print {
+          body {
+              width: 210mm;
+              margin: 0;
+              padding: 0;
+          }
+          #content {
+              width: 210mm;
+              padding: 0;
+          }
+          table, th, td {
+              border: 0.2pt solid #000 !important;
+          }
+      }
+      /* PDF导出专用样式 */
+      .pdf-export table,
+      .pdf-export th,
+      .pdf-export td {
+          border: 0.5pt solid #000 !important; /* 确保边框非常细 */
+          border-width: 0.5pt !important;
+      }
+
+      .pdf-export * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+      }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  </head>
+  <body>
+    <script>
+      function renderTable(data) {
+
+      const contentDiv = document.getElementById('content');
+      contentDiv.innerHTML = '';
+
+      data.forEach(item => {
+          item.forEach(element => {
+              const type = element[0];
+
+              switch (type) {
+                  case 1:
+                      const table1 = document.createElement('table');
+                      table1.classList.add('table-type-1');
+                      const row1 = document.createElement('tr');
+                      for (let i = 1; i < element.length; i++) {
+                          const cell = document.createElement('td');
+                          cell.textContent = element[i];
+                          row1.appendChild(cell);
+                      }
+                      table1.appendChild(row1);
+                      contentDiv.appendChild(table1);
+                      break;
+                  case 2:
+                      const table2 = document.createElement('table');
+                      table2.classList.add('table-type-2');
+                      const row2 = document.createElement('tr');
+                      const cell1 = document.createElement('td');
+                      cell1.textContent = element[1];
+                      const cell2 = document.createElement('td');
+                      cell2.textContent = element[2];
+                      row2.appendChild(cell1);
+                      row2.appendChild(cell2);
+                      table2.appendChild(row2);
+                      contentDiv.appendChild(table2);
+                      break;
+                  case 3:
+                      const table3 = document.createElement('table');
+                      table3.classList.add('table-type-3');
+                      for (let i = 1; i < element.length; i++) {
+                          const row3 = document.createElement('tr');
+                          element[i].forEach(col => {
+                              const cell = document.createElement('td');
+                              cell.textContent = col;
+                              row3.appendChild(cell);
+                          });
+                          table3.appendChild(row3);
+                      }
+                      contentDiv.appendChild(table3);
+                      break;
+                  case 4:
+                      const h1 = document.createElement('h1');
+                      h1.classList.add('title-h1');
+                      h1.textContent = element[1];
+                      contentDiv.appendChild(h1);
+                      break;
+                  case 5:
+                      const subtitle = document.createElement('p');
+                      subtitle.classList.add('subtitle');
+                      subtitle.textContent = element[1];
+                      contentDiv.appendChild(subtitle);
+                      break;
+              }
+          });
+      });
+      const exportBtn = document.getElementById('export-button');
+      exportBtn.removeEventListener('click', exportToPDF);
+      exportBtn.addEventListener('click', exportToPDF);
+
+    }
+    function exportToPDF() {
+      // 获取要导出的元素
+      const element = document.getElementById('content');
+        
+      // 添加PDF导出专用类
+      element.classList.add('pdf-export');
+      
+      // 配置选项
+      const opt = {
+          margin: [10, 10, 10, 10], // 上下左右边距
+          filename: 'document.pdf',
+          image: { 
+              type: 'jpeg', 
+              quality: 1 
+          },
+          html2canvas: { 
+              scale: 2, // 提高分辨率
+              letterRendering: true,
+              useCORS: true,
+              logging: true,
+              windowHeight: element.scrollHeight + 50,
+              scrollX: 0,
+              scrollY: 0,
+              backgroundColor: '#FFFFFF'
+          },
+          jsPDF: { 
+              unit: 'mm', 
+              format: 'a4', 
+              orientation: 'portrait',
+              hotfixes: ["px_scaling"]
+          },
+          pagebreak: { mode: 'avoid-all' } // 自动分页
+      };
+      
+      // 显示加载状态
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const loading = document.createElement('div');
+      loading.style.position = 'fixed';
+      loading.style.top = '50%';
+      loading.style.left = '50%';
+      loading.style.transform = 'translate(-50%, -50%)';
+      loading.style.backgroundColor = 'black';
+      loading.style.color = 'white';
+      loading.style.padding = '20px';
+      loading.style.border = '1px solid #000';
+      loading.style.zIndex = '9999';
+      loading.textContent = '正在导出PDF...';
+      document.body.appendChild(loading);
+      
+      // 导出为PDF
+      html2pdf()
+          .set(opt)
+          .from(element)
+          .toPdf()
+          .get('pdf')
+          .then(function(pdf) {
+              // 添加页脚
+              const totalPages = pdf.internal.getNumberOfPages();
+              for (let i = 1; i <= totalPages; i++) {
+                  pdf.setPage(i);
+                  pdf.setFontSize(8);
+                  pdf.setTextColor(100);
+                  // pdf.text(`第 ${i} 页/共 ${totalPages} 页`, 
+                  //     pdf.internal.pageSize.getWidth() - 30,
+                  //     pdf.internal.pageSize.getHeight() - 10);
+              }
+          })
+          .save()
+          .finally(function() {
+              // 恢复原始状态
+              element.classList.remove('pdf-export');
+              document.body.style.overflow = originalOverflow;
+              document.body.removeChild(loading);
+          });
+    }
+    </script>
+    <button id="export-button">导出为PDF</button>
+    <div id="content"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+		
+    <!--
+    This script places a badge on your repl's full-browser view back to your repl's cover
+    page. Try various colors for the theme: dark, light, red, orange, yellow, lime, green,
+    teal, blue, blurple, magenta, pink!
+    -->
+    
+  </body>
+</html>

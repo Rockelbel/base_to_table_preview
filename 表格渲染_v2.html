@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态表格</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+        #content {
+            width: 210mm;
+            max-width: 100%;
+            background-color: white;
+            padding: 5mm 15mm; 
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #333;
+            margin-bottom: -1px;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 12px;
+            color: #000;
+            padding: 5px;
+            word-wrap: break-word;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+        .title-h1 {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0;
+            border: none;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin: 10px 0;
+            border: none;
+        }
+
+        .table-type-1 td:nth-child(1) {
+            font-weight: bold;
+            width: 20%;
+        }
+        .table-type-1 td:nth-child(3) {
+            font-weight: bold;
+            width: 20%;
+        }
+        .table-type-1 td:nth-child(2) {
+            width: 30%;
+        }
+        .table-type-1 td:nth-child(4) {
+            width: 30%;
+        }
+
+        .table-type-2 td:first-child {
+            width: 20%;
+            font-weight: bold;
+        }
+
+        .table-type-2 td:last-child {
+            width: 80%;
+        }
+
+        .table-type-3 td {
+            width: auto;
+            min-width: 10%;
+        }
+        .table-type-3 td:first-child {
+            max-width: 20%;
+        }
+        .table-type-3 tr:first-child td {
+            font-weight: bold;
+        }
+
+        /* PDF导出专用样式 */
+        @media print {
+            body {
+                width: 210mm;
+                margin: 0;
+                padding: 0;
+            }
+            #content {
+                width: 210mm;
+                padding: 0;
+            }
+            table, th, td {
+                border: 0.2pt solid #000 !important;
+            }
+        }
+        /* PDF导出专用样式 */
+        .pdf-export table,
+        .pdf-export th,
+        .pdf-export td {
+            border: 0.5pt solid #000 !important; /* 确保边框非常细 */
+            border-width: 0.5pt !important;
+        }
+
+        .pdf-export * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <button id="export-button">导出为PDF</button>
+    <div id="content"></div>
+
+    <script>
+        const data = [
+            [
+                [4, "1.上门信息表"],
+                [1, "公司名称", "分贝音乐（北京）科技有限公司", "公司简称", "分贝音乐"],
+                [2, "公司简介", "分贝音乐成立于2016年，是一家互联网+的饮料公司，专门生产无糖、低热量的产品。推出了一系列深受客户欢迎的饮料，包括燃茶和气泡水。"],
+                [1, "所属区域", "东区", "办公城市", "杭州"],
+                [1, "公司人数", "534人", "公司规模", "500-2000人"],
+                [1, "一级簇群", "新零售", "二级簇群", "食品饮料"],
+                [2, "同二级簇群标杆客户", "泉膳（中国）投资有限公司"],
+                [2, "预估年GMV", "3000万人民币"],
+                [5, ""],
+                [1, "商旅系统", "携程商旅", "费控系统", "易快报"],
+                [1, "财务系统", "金蝶/用友", "OA系统", "飞书"],
+                [2, "银企直联", "招行"],
+                [5, ""],
+                [3, 
+                    ["客户层级","客户职位","客户姓名","客户角色","客户手机","客户微信"],
+                    ["KP","财务总监","罗静","决策人","13811223344","wxluojing"],
+                    ["PM","行政总监","张三","影响人","17822223333","wxzhangsan"]
+                ],
+                [5, ""],
+                [1, "线索负责人", "楚艳视", "线索负责人三级部门", "SDR组"],
+                [1, "销售负责人", "石慧", "销售负责人三级部门", "FAE北京1区"],
+                [2, "一次方案", "xxx一次方案"],
+                [1, "新签线索来源", "市场inbound", "个人大使姓名", "张无极"],
+                [1, "个人大使推荐证明", "xxx", "生态活动名称", "数字财务论坛（榕锦IT圈）-珠海"],
+                [1, "生态伙伴名称", "飞书", "顾问大使名称", "张三"],
+                [1, "计划拜访日期", "2023/08/01", "计划拜访方式", "面访"],
+                [1, "客户参会人", "罗静 行政总，张飞 财务总监", "地址", "中国北京市朝阳区东三环南路58号"],
+                [2, "拜访建议及备注(>20字)", "建议带点土特产，对方KP喜欢茶叶。"],
+                [2, "潜在使用模块", "商旅/用车/用餐/商城/AI/BI"],
+                [2, "需求痛点描述(>20字)", "目前的供应商，无法支持需要按不同主体/门店独立核算，出票流程繁琐，亟需减负"],
+            ]
+        ];
+
+        const contentDiv = document.getElementById('content');
+
+        data.forEach(item => {
+            item.forEach(element => {
+                const type = element[0];
+
+                switch (type) {
+                    case 1:
+                        const table1 = document.createElement('table');
+                        table1.classList.add('table-type-1');
+                        const row1 = document.createElement('tr');
+                        for (let i = 1; i < element.length; i++) {
+                            const cell = document.createElement('td');
+                            cell.textContent = element[i];
+                            row1.appendChild(cell);
+                        }
+                        table1.appendChild(row1);
+                        contentDiv.appendChild(table1);
+                        break;
+                    case 2:
+                        const table2 = document.createElement('table');
+                        table2.classList.add('table-type-2');
+                        const row2 = document.createElement('tr');
+                        const cell1 = document.createElement('td');
+                        cell1.textContent = element[1];
+                        const cell2 = document.createElement('td');
+                        cell2.textContent = element[2];
+                        row2.appendChild(cell1);
+                        row2.appendChild(cell2);
+                        table2.appendChild(row2);
+                        contentDiv.appendChild(table2);
+                        break;
+                    case 3:
+                        const table3 = document.createElement('table');
+                        table3.classList.add('table-type-3');
+                        for (let i = 1; i < element.length; i++) {
+                            const row3 = document.createElement('tr');
+                            element[i].forEach(col => {
+                                const cell = document.createElement('td');
+                                cell.textContent = col;
+                                row3.appendChild(cell);
+                            });
+                            table3.appendChild(row3);
+                        }
+                        contentDiv.appendChild(table3);
+                        break;
+                    case 4:
+                        const h1 = document.createElement('h1');
+                        h1.classList.add('title-h1');
+                        h1.textContent = element[1];
+                        contentDiv.appendChild(h1);
+                        break;
+                    case 5:
+                        const subtitle = document.createElement('p');
+                        subtitle.classList.add('subtitle');
+                        subtitle.textContent = element[1];
+                        contentDiv.appendChild(subtitle);
+                        break;
+                }
+            });
+        });
+
+document.getElementById('export-button').addEventListener('click', function() {
+    // 获取要导出的元素
+    const element = document.getElementById('content');
+    
+    // 添加PDF导出专用类
+    element.classList.add('pdf-export');
+    
+    // 配置选项
+    const opt = {
+        margin: [10, 10, 10, 10], // 上下左右边距
+        filename: 'document.pdf',
+        image: { 
+            type: 'jpeg', 
+            quality: 1 
+        },
+        html2canvas: { 
+            scale: 2, // 提高分辨率
+            letterRendering: true,
+            useCORS: true,
+            logging: true,
+            windowHeight: element.scrollHeight + 50,
+            scrollX: 0,
+            scrollY: 0,
+            backgroundColor: '#FFFFFF'
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            hotfixes: ["px_scaling"]
+        },
+        pagebreak: { mode: 'avoid-all' } // 自动分页
+    };
+    
+    // 显示加载状态
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const loading = document.createElement('div');
+    loading.style.position = 'fixed';
+    loading.style.top = '50%';
+    loading.style.left = '50%';
+    loading.style.transform = 'translate(-50%, -50%)';
+    loading.style.backgroundColor = 'white';
+    loading.style.padding = '20px';
+    loading.style.border = '1px solid #000';
+    loading.style.zIndex = '9999';
+    loading.textContent = '正在生成PDF...';
+    document.body.appendChild(loading);
+    
+    // 导出为PDF
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .toPdf()
+        .get('pdf')
+        .then(function(pdf) {
+            // 添加页脚
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.setTextColor(100);
+                // pdf.text(`第 ${i} 页/共 ${totalPages} 页`, 
+                //     pdf.internal.pageSize.getWidth() - 30,
+                //     pdf.internal.pageSize.getHeight() - 10);
+            }
+        })
+        .save()
+        .finally(function() {
+            // 恢复原始状态
+            element.classList.remove('pdf-export');
+            document.body.style.overflow = originalOverflow;
+            document.body.removeChild(loading);
+        });
+});
+    </script>
+</body>
+</html>
